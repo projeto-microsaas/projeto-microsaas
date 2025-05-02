@@ -1,30 +1,30 @@
-version: '3.8'
 services:
-  backend:
-    build: ./backend
+  nahora-backend:
+    build: ./nahora-backend
     ports:
       - "5000:5000"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/nahora
-      - JWT_SECRET=your_jwt_secret
     depends_on:
-      - mongo
-  mongo:
-    image: mongo:6.0
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
+      mongodb:
+        condition: service_healthy
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/nahora
+      - JWT_SECRET=your_jwt_secret
+      - PORT=5000
   nahora-merchant:
     build: ./nahora-merchant
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - ./nahora-merchant:/app
-      - /app/node_modules
     depends_on:
-      - backend
+      - nahora-backend
+  mongodb:
+    image: mongo:latest
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 volumes:
-  mongo-data:
+  mongodb_data:
