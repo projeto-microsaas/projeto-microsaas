@@ -1,43 +1,44 @@
+
+
 services:
+  frontend:
+    build:
+      context: ./nahora-merchant
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+   
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=development
+
+  backend:
+    build:
+      context: ./nahora-backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    
+    depends_on:
+      - mongodb
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongodb:27017/nahora
+      - JWT_SECRET=7e6ff62ecda93407fc58ca8c4c25b136f0842052c54ebfbe005d3533898af8ab563a0d46f6087b4ff1f0d6ad560410cd4ec76e96ecb957d2c7f6717213311223759f1fed04bd2616a7df7de1a8279e7fd051864674bfae20d959cf3fe09e7114704e72b94bc6708d96a1596a90c1d0b25afc97daac80f9d12b5e38c53d9938c209def8d552d7d68bdc18d384cea72cc743cc33c18e1ea5d4013ed5d471dd1fd40bc615f0f0e837b5f2c3f41e6ce14bcaf0077d8a4c95063869474169cab213b69a742691918728d615baf6191f8f1d9f755a48fecb779e6be5af403415c8392f4978aae24694f9bbb889484bace1f52649e355528b65677a08d4986ff6a177a3  # Adicione um valor seguro aqui
+    command: sh -c "npm install && node server.js"  # Garante que as dependências sejam instaladas
+
   mongodb:
     image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-    networks:
-      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --eval 'db.runCommand({ping:1})' || exit 1"]
+      test: ["CMD", "mongo", "--eval", "db.stats()"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 40s
-
-  backend:
-    build: ./nahora-backend
-    ports:
-      - "5000:5000"
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/nahora
-    networks:
-      - app-network
-
-  frontend:
-    build: ./nahora-merchant
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   mongodb_data:
